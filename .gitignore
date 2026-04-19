@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+*.png
+*.jpg
+!fusekit/assets/*.png
+!fusekit/assets/*.jpg
+nul
