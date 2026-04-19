@@ -1,7 +1,7 @@
 # Fuse
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Commercial License](https://img.shields.io/badge/License-Commercial-orange.svg)](mailto:nfo@forgottenforge.xyz)
-[![Version](https://img.shields.io/badge/version-0.1.0-green.svg)](https://pypi.org/project/fusekit/)
+[![Version](https://img.shields.io/badge/version-0.1.0-green.svg)](https://pypi.org/project/fusepoint/)
 [![Python](https://img.shields.io/badge/python-%E2%89%A53.9-blue.svg)](https://python.org)
 [![Status](https://img.shields.io/badge/status-production-success.svg)]()
 
@@ -10,7 +10,7 @@
 One function. Two columns of data. A publication-quality Fuse Report.
 
 ```python
-from fusekit import analyze
+from fusepoint import analyze
 
 card = analyze(x, y, current_x=0.01)
 print(card.score)   # 87
@@ -32,7 +32,7 @@ All of this in a beautiful Fuse Report you can screenshot, share, put in a prese
 ## Install
 
 ```bash
-pip install fusekit
+pip install fusepoint
 ```
 
 Dependencies: numpy, scipy, matplotlib, pandas. That's it.
@@ -43,7 +43,7 @@ Dependencies: numpy, scipy, matplotlib, pandas. That's it.
 
 ```python
 import numpy as np
-from fusekit import analyze
+from fusepoint import analyze
 
 lr = np.linspace(1e-5, 0.1, 80)
 loss = your_training_function(lr)
@@ -60,7 +60,7 @@ card.save("lr_report.png")
 
 ```python
 import pandas as pd
-from fusekit import analyze
+from fusepoint import analyze
 
 df = pd.read_csv("server_metrics.csv")
 card = analyze(df, x="concurrent_requests", y="response_time_ms",
@@ -73,7 +73,7 @@ Column names become axis labels automatically.
 ### Scan mode — analyze everything at once
 
 ```python
-from fusekit import scan
+from fusepoint import scan
 
 results = scan("data.csv")                # auto-detect x, analyze all y columns
 results = scan(df, x="time", top_n=5)     # explicit x, top 5 results
@@ -88,7 +88,7 @@ Accepts CSV, TSV, JSON (Plotly, Elasticsearch, Pandas formats), Excel, and Parqu
 ### Before / After — the comparison
 
 ```python
-from fusekit import compare
+from fusepoint import compare
 
 delta = compare(x, y_before, x, y_after,
                 current_x=0.2,

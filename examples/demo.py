@@ -1,5 +1,5 @@
 """
-fusekit — Hero Examples
+fusepoint — Hero Examples
 
 Scenarios every engineer understands:
 1. ML Learning Rate  — where does training explode?
@@ -10,7 +10,7 @@ Scenarios every engineer understands:
 """
 
 import numpy as np
-from fusekit import analyze, compare
+from fusepoint import analyze, compare
 
 # ============================================================
 # 1. ML LEARNING RATE

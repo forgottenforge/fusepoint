@@ -7,7 +7,7 @@ import io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 import numpy as np
 import pandas as pd
-from fusekit import analyze
+from fusepoint import analyze
 
 rng = np.random.default_rng(42)
 

@@ -13,7 +13,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-_ASSETS = os.path.join(os.path.dirname(__file__), "fusekit", "assets")
+_ASSETS = os.path.join(os.path.dirname(__file__), "fusepoint", "assets")
 
 # Pre-encode logos for inline HTML
 with open(os.path.join(_ASSETS, "ff.png"), "rb") as _f:
@@ -84,8 +84,8 @@ st.markdown(
 # ---------------------------------------------------------------------------
 # HERO — interactive demo card, instant visual impact
 # ---------------------------------------------------------------------------
-from fusekit import analyze as _fuse_analyze
-from fusekit.card import render_card as _fuse_card
+from fusepoint import analyze as _fuse_analyze
+from fusepoint.card import render_card as _fuse_card
 import matplotlib.pyplot as plt
 
 # Check whether data is already loaded (hides the hero when analyzing)
@@ -181,14 +181,14 @@ if not _has_data:
 # Helpers
 # ---------------------------------------------------------------------------
 
-# Import parsers from fusekit (single source of truth)
-from fusekit.parsers import parse_json as _parse_json, detect_x_column as _detect_x_column
+# Import parsers from fusepoint (single source of truth)
+from fusepoint.parsers import parse_json as _parse_json, detect_x_column as _detect_x_column
 
 
 @st.cache_data(show_spinner=False)
 def _analyze_single(df_csv, x_col, y_col):
     """Analyze a single column pair. Cached per column."""
-    from fusekit import analyze
+    from fusepoint import analyze
     df = pd.read_csv(io.StringIO(df_csv))
     try:
         r = analyze(df, x=x_col, y=y_col,
@@ -235,7 +235,7 @@ def _scan_all_columns_with_progress(df_csv, x_col, y_cols):
 @st.cache_data(show_spinner=False)
 def _full_analysis(df_csv, x_col, y_col, current_x):
     """Full analysis with high-quality bootstrap + permutation."""
-    from fusekit import analyze
+    from fusepoint import analyze
 
     df = pd.read_csv(io.StringIO(df_csv))
     return analyze(df, x=x_col, y=y_col,
@@ -627,7 +627,7 @@ with col_card:
             st.markdown(f"**{result.diagnosis}**")
 
         # Card
-        from fusekit.card import render_card
+        from fusepoint.card import render_card
         import matplotlib.pyplot as plt
 
         fig = render_card(result)

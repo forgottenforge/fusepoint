@@ -1,5 +1,5 @@
 """
-Test fusekit on REAL experimental data from quantum hardware.
+Test fusepoint on REAL experimental data from quantum hardware.
 
 Uses ZZ correlator data from Rigetti Ankaa-3 (published in AVS Quantum Science).
 These are real measurements — not synthetic.
@@ -18,7 +18,7 @@ import csv
 import os
 import sys
 
-from fusekit import analyze
+from fusepoint import analyze
 
 # Load the real data
 DATA_PATH = r"d:\code\onto\zz_correlators_by_depth.csv"
@@ -205,10 +205,10 @@ print(f"  Score range: {min(triv_scores)} - {max(triv_scores)}")
 # Verdict
 print(f"\nVERDICT:")
 if n_struct_sig / n_struct > 0.5 and n_triv_fp / n_triv < 0.2:
-    print("  fusekit correctly distinguishes real quantum signals from noise!")
+    print("  fusepoint correctly distinguishes real quantum signals from noise!")
 elif n_struct_sig / n_struct > 0.3:
-    print("  fusekit detects some signals but misses others (limited data points)")
+    print("  fusepoint detects some signals but misses others (limited data points)")
 else:
-    print("  fusekit struggles with this data format — needs investigation")
+    print("  fusepoint struggles with this data format — needs investigation")
 
 print()

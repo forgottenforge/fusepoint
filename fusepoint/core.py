@@ -1,7 +1,7 @@
 """
 Core API — the three functions most users need.
 
-    from fusekit import analyze, scan, compare
+    from fusepoint import analyze, scan, compare
     card = analyze(x, y)
     card = analyze(df, x="load", y="latency")
     results = scan("data.csv")           # auto-detect x, analyze all y columns
@@ -10,7 +10,7 @@ Core API — the three functions most users need.
 
 from __future__ import annotations
 import numpy as np
-from fusekit.engine import (
+from fusepoint.engine import (
     compute_susceptibility,
     compute_kappa,
     find_critical_point,
@@ -20,8 +20,8 @@ from fusekit.engine import (
     compute_stability_score,
     generate_diagnosis,
 )
-from fusekit.result import StabilityResult
-from fusekit.parsers import parse_json, detect_x_column
+from fusepoint.result import StabilityResult
+from fusepoint.parsers import parse_json, detect_x_column
 
 
 def _col_to_label(col_name):
@@ -162,7 +162,7 @@ def analyze(data, y=None, *, x=None, current_x=None, label=None,
 
     # Deduplicate: average y-values at duplicate x positions
     # (must happen here so all arrays stay the same length)
-    from fusekit.engine import _deduplicate
+    from fusepoint.engine import _deduplicate
     x_arr, y_arr = _deduplicate(x_arr, y_arr)
 
     if len(x_arr) < 5:
@@ -278,14 +278,14 @@ class ComparisonResult:
         )
 
     def show(self, **kwargs):
-        from fusekit.card import render_comparison_card
+        from fusepoint.card import render_comparison_card
         fig = render_comparison_card(self, **kwargs)
         import matplotlib.pyplot as plt
         plt.show()
         return fig
 
     def save(self, path: str = "comparison_card.png", dpi: int = 200, **kwargs):
-        from fusekit.card import render_comparison_card
+        from fusepoint.card import render_comparison_card
         fig = render_comparison_card(self, **kwargs)
         fig.savefig(path, dpi=dpi, bbox_inches="tight",
                     facecolor=fig.get_facecolor(), edgecolor="none")

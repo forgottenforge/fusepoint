@@ -3,7 +3,7 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "fusekit"
+name = "fusepoint"
 version = "0.1.0"
 description = "Fuse — find where your system breaks, before it does."
 readme = "README.md"
@@ -30,8 +30,8 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://www.forgottenforge.xyz"
-Repository = "https://github.com/forgottenforge/fusekit"
-Documentation = "https://github.com/forgottenforge/fusekit#readme"
+Repository = "https://github.com/forgottenforge/fusepoint"
+Documentation = "https://github.com/forgottenforge/fusepoint#readme"
 
 [tool.setuptools.packages.find]
-include = ["fusekit*"]
+include = ["fusepoint*"]

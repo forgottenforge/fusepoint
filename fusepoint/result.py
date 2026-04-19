@@ -10,7 +10,7 @@ import numpy as np
 
 
 class StabilityResult:
-    """Result of a fusekit analysis.
+    """Result of a fusepoint analysis.
 
     Attributes
     ----------
@@ -95,7 +95,7 @@ class StabilityResult:
 
     def show(self, **kwargs):
         """Display the Stability Card interactively."""
-        from fusekit.card import render_card
+        from fusepoint.card import render_card
         fig = render_card(self, **kwargs)
         import matplotlib.pyplot as plt
         plt.show()
@@ -103,7 +103,7 @@ class StabilityResult:
 
     def save(self, path: str = "stability_card.png", dpi: int = 200, **kwargs):
         """Save the Stability Card as PNG."""
-        from fusekit.card import render_card
+        from fusepoint.card import render_card
         fig = render_card(self, **kwargs)
         fig.savefig(path, dpi=dpi,
                     facecolor=fig.get_facecolor(), edgecolor="none")

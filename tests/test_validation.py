@@ -1,5 +1,5 @@
 """
-Comprehensive validation of fusekit.
+Comprehensive validation of fusepoint.
 
 Tests:
 1. Known tipping points — does it find them exactly?
@@ -36,7 +36,7 @@ def section(title):
     print(f"{'='*60}")
 
 
-from fusekit import analyze, compare
+from fusepoint import analyze, compare
 
 
 # ================================================================

@@ -7,6 +7,6 @@ build/
 .pytest_cache/
 *.png
 *.jpg
-!fusekit/assets/*.png
-!fusekit/assets/*.jpg
+!fusepoint/assets/*.png
+!fusepoint/assets/*.jpg
 nul
