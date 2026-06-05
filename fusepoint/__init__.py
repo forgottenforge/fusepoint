@@ -15,7 +15,7 @@ from fusepoint.core import analyze, scan, compare
 from fusepoint.result import StabilityResult
 from fusepoint.parsers import parse_json, detect_x_column
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __paper_doi__ = "10.5281/zenodo.20548818"
 __paper_url__ = "https://doi.org/10.5281/zenodo.20548818"
 __all__ = [

@@ -259,7 +259,35 @@ if not _has_data:
 uploaded = st.file_uploader("Upload CSV, TSV, JSON", type=["csv", "tsv", "txt", "json"],
                             key="_uploader", label_visibility="collapsed")
 
-if uploaded is None:
+# Persist the parsed upload across reruns. On Streamlit Cloud / HF Spaces the
+# file_uploader widget can transiently report None after st.rerun() following a
+# button click. Caching the parsed DataFrame in session_state shields the rest
+# of the flow from that race.
+if uploaded is not None:
+    _stash = st.session_state.get("_uploaded_df_stash") or {}
+    if _stash.get("name") != uploaded.name or _stash.get("size") != uploaded.size:
+        try:
+            if uploaded.name.endswith(".json"):
+                import json as _json
+                _df_up = _parse_json(_json.load(uploaded))
+            else:
+                _sep = "\t" if uploaded.name.endswith(".tsv") else ","
+                _df_up = pd.read_csv(uploaded, sep=_sep)
+            st.session_state["_uploaded_df_stash"] = {
+                "name": uploaded.name,
+                "size": uploaded.size,
+                "df": _df_up,
+            }
+        except Exception as _exc:
+            st.error(f"Could not parse file: {_exc}")
+            st.stop()
+
+# Effective "do we have an uploaded dataset" — survives transient widget None.
+_has_uploaded_data = (
+    "_uploaded_df_stash" in st.session_state and "demo_df" not in st.session_state
+)
+
+if uploaded is None and not _has_uploaded_data:
     # Demo selector — in a blue-bordered box
     if "demo_df" not in st.session_state:
         st.markdown(
@@ -485,17 +513,10 @@ if uploaded is None:
         )
         st.stop()
 else:
-    try:
-        if uploaded.name.endswith(".json"):
-            import json
-            raw = json.load(uploaded)
-            df = _parse_json(raw)
-        else:
-            sep = "\t" if uploaded.name.endswith(".tsv") else ","
-            df = pd.read_csv(uploaded, sep=sep)
-    except Exception as e:
-        st.error(f"Could not parse file: {e}")
-        st.stop()
+    # Read the parsed DataFrame from the stash filled when the upload arrived.
+    # This keeps the rest of the script untouched whether the widget currently
+    # returns a file object or has transiently dropped it across a rerun.
+    df = st.session_state["_uploaded_df_stash"]["df"]
 
 # ---------------------------------------------------------------------------
 # Data overview
