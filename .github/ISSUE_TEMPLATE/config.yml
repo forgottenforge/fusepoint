@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security disclosure
+    url: https://github.com/forgottenforge/fusepoint/blob/main/SECURITY.md
+    about: For security vulnerabilities, do NOT open a public issue -- see SECURITY.md.
+  - name: Commercial licensing inquiry
+    url: mailto:nfo@forgottenforge.xyz
+    about: For commercial licensing (no AGPL obligations), please contact us directly.

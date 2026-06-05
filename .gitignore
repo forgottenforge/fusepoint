@@ -1,3 +1,4 @@
+# Python build artefacts
 __pycache__/
 *.pyc
 *.pyo
@@ -5,8 +6,35 @@ __pycache__/
 dist/
 build/
 .pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Editor / IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Secrets / credentials
+.env
+.env.*
+*.pem
+*.key
+.pypirc
+.claude/
+
+# Windows null-device artefact
+nul
+/nul
+
+# Generated example outputs (keep only sources in fusepoint/assets/)
 *.png
 *.jpg
 !fusepoint/assets/*.png
 !fusepoint/assets/*.jpg
-nul
+
+# Separate, unrelated project living in this checkout
+paper_qaoa/

@@ -20,8 +20,22 @@ import sys
 
 from fusepoint import analyze
 
-# Load the real data
-DATA_PATH = r"d:\code\onto\zz_correlators_by_depth.csv"
+# Path to the ZZ-correlator CSV. Override with the FUSEPOINT_QUANTUM_DATA
+# environment variable when running locally. The dataset is not shipped
+# with the package (it is published separately in AVS Quantum Science).
+DATA_PATH = os.environ.get(
+    "FUSEPOINT_QUANTUM_DATA",
+    "zz_correlators_by_depth.csv",
+)
+
+if not os.path.isfile(DATA_PATH):
+    print(
+        f"[skip] Dataset not found at {DATA_PATH}. Set the "
+        f"FUSEPOINT_QUANTUM_DATA environment variable to the CSV "
+        f"path to run this validation script.",
+        file=sys.stderr,
+    )
+    sys.exit(0)
 
 # Parse CSV
 depths = None

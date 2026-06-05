@@ -488,10 +488,12 @@ def render_card(result, figsize=(14, 8), verbose=False):
         Default False shows clean recommendation + tiny detail line.
     """
     fig = plt.figure(figsize=figsize, facecolor=C_BG)
-    fig.subplots_adjust(left=0.06, right=0.94, top=0.88, bottom=0.12)
+    # Left margin keeps room for y-axis labels; right is flush with the footer.
+    fig.subplots_adjust(left=0.05, right=0.985, top=0.88, bottom=0.12)
 
-    gs = gridspec.GridSpec(2, 3, figure=fig, hspace=0.35, wspace=0.30,
-                           width_ratios=[1.1, 1.5, 1.3])
+    # Right column carries the Recommendation text and needs the most room.
+    gs = gridspec.GridSpec(2, 3, figure=fig, hspace=0.35, wspace=0.22,
+                           width_ratios=[0.95, 1.35, 1.55])
 
     # Title — clean, modern
     fig.text(0.5, 0.96, "Fuse Report",
@@ -533,7 +535,7 @@ def render_comparison_card(comp, figsize=(15, 9)):
     gs = gridspec.GridSpec(3, 2, figure=fig,
                            height_ratios=[1.2, 1.4, 0.5],
                            hspace=0.30, wspace=0.25)
-    fig.subplots_adjust(left=0.06, right=0.94, top=0.88, bottom=0.12)
+    fig.subplots_adjust(left=0.05, right=0.985, top=0.88, bottom=0.12)
 
     # Title
     delta = comp.delta_score

@@ -32,7 +32,7 @@ def _col_to_label(col_name):
 def analyze(data, y=None, *, x=None, current_x=None, label=None,
             x_name=None, y_name=None,
             n_boot=1000, n_perm=2000, kernel_sigma=0.6,
-            method="auto"):
+            method="auto", deep=False):
     """Analyze your data for tipping points. Returns a StabilityResult.
 
     Parameters
@@ -63,6 +63,11 @@ def analyze(data, y=None, *, x=None, current_x=None, label=None,
         Smoothing width (default 0.6).
     method : str
         Derivative method: "auto", "gaussian", or "savgol".
+    deep : bool
+        If True, run the sigma_c_v4 theorem-anchored layer in addition
+        to the FUSE statistical pipeline. The result gains .regime,
+        .citations, .gamma_O, and .paper_doi fields, each traceable to a
+        proof in the foundation paper (doi:10.5281/zenodo.20548818).
 
     Returns
     -------
@@ -77,6 +82,11 @@ def analyze(data, y=None, *, x=None, current_x=None, label=None,
     >>> # DataFrame mode — column names become axis labels automatically
     >>> card = analyze(df, x="learning_rate", y="loss", current_x=0.01)
     >>> card.save("report.png")
+    >>>
+    >>> # Theorem-anchored mode
+    >>> card = analyze(df, x="time", y="signal", deep=True)
+    >>> print(card.regime)        # "I_geom" / "II_geom" / "III_geom"
+    >>> print(card.citations)     # ["def:sigmac", "thm:trichotomy-geometric", ...]
     """
     # --- String input: JSON or file path ---
     if isinstance(data, str):
@@ -214,6 +224,29 @@ def analyze(data, y=None, *, x=None, current_x=None, label=None,
         current_x=current_x,
     )
 
+    # 9. Theorem-anchored layer (opt-in via deep=True)
+    v4_regime = v4_regime_detail = v4_citations = v4_gamma_O = None
+    v4_framework = v4_paper_doi = None
+    if deep:
+        import sigma_c_v4 as _sv4
+        # Share FUSE's chi as the single source of truth so v4 classifies
+        # the same curve FUSE scored.
+        v4_result = _sv4.analyze(x_arr, y_arr, chi=chi)
+        v4_regime = v4_result.regime.geometric
+        v4_regime_detail = v4_result.regime.as_dict()
+        v4_citations = list(v4_result.citations)
+        v4_gamma_O = v4_result.gamma_O
+        v4_framework = (v4_result.framework.value
+                        if v4_result.framework is not None else None)
+        v4_paper_doi = _sv4.__paper_doi__
+        # Augment FUSE's diagnosis with the regime verdict
+        regime_label = {
+            "I_geom": "single mode (regime I, paper Thm 8.5)",
+            "II_geom": "multi-mode (regime II, paper Thm 8.5)",
+            "III_geom": "no characteristic scale (regime III, paper Thm 8.5)",
+        }.get(v4_regime, v4_regime)
+        diag["detail"] = f"{diag['detail']} Regime: {regime_label}."
+
     return StabilityResult(
         score=score_info["score"],
         grade=diag["grade"],
@@ -233,6 +266,12 @@ def analyze(data, y=None, *, x=None, current_x=None, label=None,
         label=label,
         x_name=x_name,
         y_name=y_name,
+        regime=v4_regime,
+        regime_detail=v4_regime_detail,
+        citations=v4_citations,
+        gamma_O=v4_gamma_O,
+        paper_doi=v4_paper_doi,
+        framework=v4_framework,
     )
 
 
@@ -299,7 +338,7 @@ class ComparisonResult:
 # ---------------------------------------------------------------------------
 
 def scan(data, *, x=None, current_x=None, n_boot=1000, n_perm=2000,
-         kernel_sigma=0.6, method="auto", top_n=None):
+         kernel_sigma=0.6, method="auto", top_n=None, deep=False):
     """Scan all numeric columns in a dataset for tipping points.
 
     Automatically detects the x (independent variable) column and runs
@@ -405,6 +444,7 @@ def scan(data, *, x=None, current_x=None, n_boot=1000, n_perm=2000,
                 n_perm=n_perm,
                 kernel_sigma=kernel_sigma,
                 method=method,
+                deep=deep,
             )
             results.append(r)
         except (ValueError, RuntimeError):

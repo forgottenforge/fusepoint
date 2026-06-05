@@ -38,7 +38,7 @@ print()
 
 # Save test CSV
 pd.DataFrame({"magnetic_field_T": B, "entanglement_entropy": entanglement}).to_csv(
-    "d:/code/sweetspot/examples/physics_entanglement.csv", index=False)
+    "examples/physics_entanglement.csv", index=False)
 
 # ---------------------------------------------------------------------------
 # 2. Fusion Reactor — Surface Erosion vs Plasma Temperature
@@ -66,7 +66,7 @@ print(f"  Diagnosis:     {r2.diagnosis}")
 print()
 
 pd.DataFrame({"plasma_temperature_C": temp_fusion, "erosion_rate_um_per_pulse": erosion}).to_csv(
-    "d:/code/sweetspot/examples/fusion_erosion.csv", index=False)
+    "examples/fusion_erosion.csv", index=False)
 
 # ---------------------------------------------------------------------------
 # 3. Chemistry — Reaction Rate vs Temperature
@@ -93,7 +93,7 @@ print(f"  Diagnosis:     {r3.diagnosis}")
 print()
 
 pd.DataFrame({"temperature_C": temp_chem, "reaction_rate_mol_s": reaction_rate}).to_csv(
-    "d:/code/sweetspot/examples/chemistry_reaction.csv", index=False)
+    "examples/chemistry_reaction.csv", index=False)
 
 # ---------------------------------------------------------------------------
 # 4. Biology — Cell Survival vs Drug Concentration
@@ -120,7 +120,7 @@ print(f"  Diagnosis:     {r4.diagnosis}")
 print()
 
 pd.DataFrame({"dose_mg_L": dose, "cell_survival_pct": survival}).to_csv(
-    "d:/code/sweetspot/examples/biology_cytotoxicity.csv", index=False)
+    "examples/biology_cytotoxicity.csv", index=False)
 
 # ---------------------------------------------------------------------------
 # 5. ML — Gradient Norm vs Learning Rate
@@ -147,7 +147,7 @@ print(f"  Diagnosis:     {r5.diagnosis}")
 print()
 
 pd.DataFrame({"learning_rate": lr, "gradient_norm": grad_norm}).to_csv(
-    "d:/code/sweetspot/examples/ml_gradient.csv", index=False)
+    "examples/ml_gradient.csv", index=False)
 
 # ---------------------------------------------------------------------------
 # 6. Infrastructure — Response Latency vs Concurrent Requests
@@ -174,7 +174,7 @@ print(f"  Diagnosis:     {r6.diagnosis}")
 print()
 
 pd.DataFrame({"concurrent_requests": rq, "response_time_ms": latency}).to_csv(
-    "d:/code/sweetspot/examples/infra_server_load.csv", index=False)
+    "examples/infra_server_load.csv", index=False)
 
 print("=" * 70)
 print("ALL TESTS COMPLETE — CSV files saved to examples/")

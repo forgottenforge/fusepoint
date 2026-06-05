@@ -1,8 +1,11 @@
 """
-Fuse Web App — Upload CSV, get instant analysis of ALL columns.
+Fuse Web App - upload a CSV, get instant analysis of every column.
 
-Run with:
-    python -m streamlit run app.py
+Run via the installed CLI:
+    fuse-ui
+
+Or directly:
+    python -m streamlit run fusepoint/web.py
 """
 
 import io
@@ -13,7 +16,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-_ASSETS = os.path.join(os.path.dirname(__file__), "fusepoint", "assets")
+_ASSETS = os.path.join(os.path.dirname(__file__), "assets")
 
 # Pre-encode logos for inline HTML
 with open(os.path.join(_ASSETS, "ff.png"), "rb") as _f:
@@ -690,8 +693,41 @@ with col_card:
             unsafe_allow_html=True,
         )
 
-# --- Footer ---
+# --- Reference block (always available, also on results pages) ---
 st.divider()
+with st.expander("What the results mean \u2014 grades, tested domains & recommendations"):
+    st.markdown("""
+#### Grades & what to do
+
+| Grade | Meaning | Action |
+|---|---|---|
+| **STABLE** (85+) | Far from the edge | You're fine. Set alerts at 90% of the tipping point. |
+| **MODERATE** (60-84) | Room left, but limited | **Hold where you are.** Don't push harder without a plan. |
+| **WARNING** (35-59) | Close to the edge | **Back off.** Lower temp, cut dose, add capacity. |
+| **CRITICAL** (<35) | Past the breaking point | **Act now.** Reduce immediately. |
+
+---
+
+#### All 6 tested domains
+
+| Domain | Tipping Point | Score | What to do |
+|---|---|---|---|
+| **Physics** \u2014 B-field | **2.27 T** (CI: 2.18\u20132.45) | 73 | Keep below 2.0 T. Hunting the transition? Sweep 2.1\u20132.5 T. |
+| **Fusion** \u2014 Plasma temp | **1176\u00b0C** (CI: 1152\u20131212) | 73 | Hard limit at 1060\u00b0C. **Increase coolant** or **cut plasma power**. |
+| **Chemistry** \u2014 Reaction temp | **151\u00b0C** (CI: 142\u2013155) | 76 | Reactor limit at 136\u00b0C. Past it? **Shutdown**, cut the feed. |
+| **Biology** \u2014 Drug dose | **42 mg/L** (CI: 38\u201348) | 56 | Safe max: 38 mg/L. Need more effect? Try combination therapy. |
+| **ML** \u2014 Learning rate | **0.053** (CI: 0.048\u20130.056) | 73 | Set lr to 0.04. Past 0.06? **Stop**, lower to 0.03, restart. |
+| **Infra** \u2014 Requests | **7200 req/s** (CI: 7000\u20137300) | 85 | Autoscale at 5700. Past TP? **Shed load** \u2014 rate-limit, serve cached. |
+
+**Rule of thumb:** Keep your operating point at **80\u201390% of the tipping point**. That's your real limit.
+
+---
+
+**Works with** any CSV/TSV/JSON, 2+ numeric columns, 8+ rows.
+**Won't work** on pure noise, linear trends with no cliff, or fewer than 8 points.
+""")
+
+# --- Footer ---
 st.markdown(
     f'<div style="display:flex; align-items:center; justify-content:space-between; '
     f'padding:0.3rem 0;">'

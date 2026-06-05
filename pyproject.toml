@@ -4,34 +4,58 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fusepoint"
-version = "0.1.0"
-description = "Fuse — find where your system breaks, before it does."
+version = "1.0.0"
+description = "Fuse - find where your system breaks, before it does. Statistically rigorous tipping-point detection, theorem-anchored via the sigma_c foundation paper."
 readme = "README.md"
-license = "AGPL-3.0-or-later"
+license = {text = "AGPL-3.0-or-later OR Commercial"}
 requires-python = ">=3.9"
 authors = [
     {name = "Forgotten Forge", email = "nfo@forgottenforge.xyz"},
 ]
-keywords = ["tipping-point", "stability", "phase-transition", "critical-point", "data-analysis"]
+keywords = [
+    "tipping-point", "stability", "phase-transition", "critical-point",
+    "data-analysis", "susceptibility", "scale-selection", "regime-detection",
+]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "License :: Other/Proprietary License",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Mathematics",
 ]
 dependencies = [
     "numpy>=1.22",
     "scipy>=1.9",
     "matplotlib>=3.6",
     "pandas>=1.5",
+    "sigma-c-framework>=4.0.0",
 ]
+
+[project.optional-dependencies]
+ui = ["streamlit>=1.30", "Pillow>=9.0"]
+dev = ["pytest>=7.0", "build>=1.0", "twine>=4.0"]
+
+[project.scripts]
+fuse-ui = "fusepoint.cli:main"
 
 [project.urls]
 Homepage = "https://www.forgottenforge.xyz"
 Repository = "https://github.com/forgottenforge/fusepoint"
 Documentation = "https://github.com/forgottenforge/fusepoint#readme"
+Issues = "https://github.com/forgottenforge/fusepoint/issues"
+Paper = "https://doi.org/10.5281/zenodo.20548818"
 
 [tool.setuptools.packages.find]
 include = ["fusepoint*"]
+
+[tool.setuptools.package-data]
+fusepoint = ["assets/*.png", "assets/*.jpg"]

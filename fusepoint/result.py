@@ -47,7 +47,9 @@ class StabilityResult:
     def __init__(self, *, score, grade, icon, diagnosis, critical_x,
                  ci_low, ci_high, kappa, p_value, safety_margin,
                  components, x, y, chi, current_x=None, label=None,
-                 x_name=None, y_name=None):
+                 x_name=None, y_name=None,
+                 regime=None, regime_detail=None, citations=None,
+                 gamma_O=None, paper_doi=None, framework=None):
         self.score = score
         self.grade = grade
         self.icon = icon
@@ -65,6 +67,13 @@ class StabilityResult:
         self.label = label or "System"
         self.x_name = x_name or "Parameter"
         self.y_name = y_name or "Observable"
+        # Theorem-anchored layer (populated when deep=True). None when off.
+        self.regime = regime
+        self.regime_detail = regime_detail
+        self.citations = citations
+        self.gamma_O = gamma_O
+        self.paper_doi = paper_doi
+        self.framework = framework
 
     # ------------------------------------------------------------------
     # Display helpers
@@ -83,14 +92,23 @@ class StabilityResult:
         lines = [
             f"  Stability Score:  {self.score} / 100  [{self.grade}]",
             f"  Tipping point:    {xn} = {self.critical_x:.4g}  "
-            f"(95% CI: {self.ci[0]:.4g} – {self.ci[1]:.4g})",
+            f"(95% CI: {self.ci[0]:.4g} - {self.ci[1]:.4g})",
             f"  Peak sharpness:   k = {self.kappa:.2f}",
             f"  Significance:     p = {self.p_value:.4f}  "
             f"({'significant' if self.p_value < 0.05 else 'not significant'})",
             f"  Safety margin:    {self.safety_margin * 100:.0f}%",
-            f"",
-            f"  {self.diagnosis}",
         ]
+        if self.regime is not None:
+            lines.append(f"  Regime (paper):   {self.regime}")
+            if self.gamma_O is not None:
+                lines.append(f"  gamma_O (SOC):    {self.gamma_O:.4g}")
+            if self.citations:
+                lines.append(f"  Backed by:        {', '.join(self.citations[:3])}"
+                             + (f" +{len(self.citations)-3} more"
+                                if len(self.citations) > 3 else ""))
+            if self.paper_doi:
+                lines.append(f"  Paper DOI:        {self.paper_doi}")
+        lines.extend([f"", f"  {self.diagnosis}"])
         return "\n".join(lines)
 
     def show(self, **kwargs):
