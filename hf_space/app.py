@@ -6,7 +6,7 @@
 # via the `app_file: app.py` field in README.md's YAML frontmatter.
 #
 # Note: on the first launch, Hugging Face Spaces builds the Python environment
-# from requirements.txt — this can take a couple of minutes before the UI
+# from requirements.txt -- this can take a couple of minutes before the UI
 # becomes available.
 
 import fusepoint.web  # noqa: F401  -- runs the Streamlit app on import

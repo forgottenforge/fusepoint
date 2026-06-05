@@ -1,1 +1,1 @@
-fusepoint[ui]==1.0.3
+fusepoint[ui]==1.0.4

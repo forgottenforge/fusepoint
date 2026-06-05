@@ -188,11 +188,16 @@ if not _has_data:
 from fusepoint.parsers import parse_json as _parse_json, detect_x_column as _detect_x_column
 
 
-@st.cache_data(show_spinner=False)
-def _analyze_single(df_csv, x_col, y_col):
-    """Analyze a single column pair. Cached per column."""
+def _analyze_single(df, x_col, y_col):
+    """Analyze a single column pair.
+
+    Previously @st.cache_data with a CSV string key. That keyed cache by a
+    large arg (the whole df_csv) which on Streamlit 1.46 inside HF Spaces
+    caused the WebSocket to drop on subsequent reruns -- silent blank-page
+    bug. The redo cost is small (N is typically tens to hundreds of rows),
+    so we just compute fresh.
+    """
     from fusepoint import analyze
-    df = pd.read_csv(io.StringIO(df_csv))
     try:
         r = analyze(df, x=x_col, y=y_col,
                     n_boot=1000, n_perm=2000)
@@ -218,14 +223,14 @@ def _analyze_single(df_csv, x_col, y_col):
         }
 
 
-def _scan_all_columns_with_progress(df_csv, x_col, y_cols):
+def _scan_all_columns_with_progress(df, x_col, y_cols):
     """Scan all columns with a visible progress bar."""
     results = []
     bar = st.progress(0, text="Starting analysis...")
     for i, y_col in enumerate(y_cols):
         bar.progress((i + 1) / len(y_cols),
                      text=f"Analyzing {y_col}  ({i+1}/{len(y_cols)})")
-        results.append(_analyze_single(df_csv, x_col, y_col))
+        results.append(_analyze_single(df, x_col, y_col))
     bar.empty()
     # Sort: significant first, then by score descending
     results.sort(key=lambda r: (
@@ -235,12 +240,15 @@ def _scan_all_columns_with_progress(df_csv, x_col, y_cols):
     return results
 
 
-@st.cache_data(show_spinner=False)
-def _full_analysis(df_csv, x_col, y_col, current_x):
-    """Full analysis with high-quality bootstrap + permutation."""
+def _full_analysis(df, x_col, y_col, current_x):
+    """Full analysis with high-quality bootstrap + permutation.
+
+    Previously @st.cache_data with a CSV string key. Same reason as above:
+    on Streamlit 1.46 on HF Spaces, hashing a large string cache key
+    caused the WS to drop and the page to blank out.
+    """
     from fusepoint import analyze
 
-    df = pd.read_csv(io.StringIO(df_csv))
     return analyze(df, x=x_col, y=y_col,
                    current_x=current_x,
                    n_boot=1000, n_perm=2000)
@@ -559,9 +567,8 @@ if not y_cols:
 
 st.divider()
 
-df_csv = df.to_csv(index=False)
 t0 = time.time()
-scan_results = _scan_all_columns_with_progress(df_csv, x_col, y_cols)
+scan_results = _scan_all_columns_with_progress(df, x_col, y_cols)
 scan_time = time.time() - t0
 
 # Separate OK vs error results
@@ -653,7 +660,7 @@ with col_card:
 
         try:
             with st.spinner("Running full analysis..."):
-                result = _full_analysis(df_csv, x_col, y_sel, current_x)
+                result = _full_analysis(df, x_col, y_sel, current_x)
         except Exception as _exc:
             import traceback as _tb
             tb_str = _tb.format_exc()
@@ -709,7 +716,7 @@ with col_card:
                         prog.progress((idx + 1) / len(ok_results),
                                       text=f"Rendering {res['y_column']}...")
                         try:
-                            r = _full_analysis(df_csv, x_col, res["y_column"], None)
+                            r = _full_analysis(df, x_col, res["y_column"], None)
                             f = render_card(r)
                             card_buf = io.BytesIO()
                             f.savefig(card_buf, format="png", dpi=200,
