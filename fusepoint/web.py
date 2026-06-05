@@ -12,9 +12,16 @@ import io
 import os
 import time
 import base64
+import sys as _sys
 import streamlit as st
 import pandas as pd
 import numpy as np
+
+# Every script rerun emits this -- if it shows up in HF Spaces container
+# logs, stderr capture is working; if not, the silent-on-HF symptom is
+# a logging issue, not a script-execution issue.
+print(f"[fuse] === script run @ {time.time():.1f} ===",
+      file=_sys.stderr, flush=True)
 
 _ASSETS = os.path.join(os.path.dirname(__file__), "assets")
 
@@ -635,61 +642,37 @@ with col_list:
                 st.caption(f"**{er['y_column']}** — {er.get('error', 'Unknown error')}")
 
 with col_card:
+    print(f"[fuse] col_card entered, selected_y in state: "
+          f"{'selected_y' in st.session_state}",
+          file=_sys.stderr, flush=True)
     # Clear stale selection if column doesn't exist in current data
     if "selected_y" in st.session_state and st.session_state["selected_y"] not in y_cols:
         del st.session_state["selected_y"]
 
     if "selected_y" in st.session_state:
         y_sel = st.session_state["selected_y"]
-
-        # Diagnostic stderr line -- shows up in HF Spaces runtime logs so we
-        # can confirm the rerun reached the card-rendering branch.
-        import sys as _sys
-        print(f"[fuse] rendering card for y_sel={y_sel!r}",
+        print(f"[fuse] col_card rendering for {y_sel!r}",
               file=_sys.stderr, flush=True)
 
+        # Render the card area in the same flat shape as the proven-on-HF
+        # minimal harness: no nested st.columns, no st.spinner, no
+        # st.number_input with value=None. Each of those was a candidate for
+        # the Streamlit-1.46-on-HF WebSocket-drop bug; the minimal version
+        # lacked them and worked. Safety-margin input moves above the card
+        # at a future point if we re-introduce it.
         st.subheader(f"Stability Card: {y_sel}")
 
-        current_x = st.number_input(
-            "Current operating point (optional)", value=None, format="%g",
-            key="current_x_full",
-            help="Enter your current x-value to calculate safety margin. "
-                 "Example: if x is 'concurrent_requests' and you're running at 5000, enter 5000. "
-                 "FUSE will show how far you are from the tipping point."
-        )
+        result = _full_analysis(df, x_col, y_sel, None)
 
-        try:
-            with st.spinner("Running full analysis..."):
-                result = _full_analysis(df, x_col, y_sel, current_x)
-        except Exception as _exc:
-            import traceback as _tb
-            tb_str = _tb.format_exc()
-            print(f"[fuse] analyze() failed for {y_sel!r}:\n{tb_str}",
-                  file=_sys.stderr, flush=True)
-            st.error(f"Analysis failed for column **{y_sel}**:\n\n```\n{tb_str[-1500:]}\n```")
-            st.stop()
-
-        # Score + diagnosis
-        sc_col, diag_col = st.columns([1, 2.5])
-        with sc_col:
-            st.metric("Score", f"{result.score} / 100", delta=result.grade)
-        with diag_col:
-            st.markdown(f"**{result.diagnosis}**")
+        st.metric("Score", f"{result.score} / 100", delta=result.grade)
+        st.markdown(f"**{result.diagnosis}**")
 
         # Card
         from fusepoint.card import render_card
         import matplotlib.pyplot as plt
 
-        try:
-            fig = render_card(result)
-            st.pyplot(fig, use_container_width=True)
-        except Exception as _exc:
-            import traceback as _tb
-            tb_str = _tb.format_exc()
-            print(f"[fuse] render_card/pyplot failed for {y_sel!r}:\n{tb_str}",
-                  file=_sys.stderr, flush=True)
-            st.error(f"Card rendering failed:\n\n```\n{tb_str[-1500:]}\n```")
-            st.stop()
+        fig = render_card(result)
+        st.pyplot(fig, use_container_width=True)
 
         # Download buttons
         dl_single, dl_all = st.columns(2)

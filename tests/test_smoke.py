@@ -33,7 +33,7 @@ def df_logistic(logistic):
 # ---------------------------------------------------------------------------
 
 def test_version_is_published():
-    assert fusepoint.__version__ == "1.0.4"
+    assert fusepoint.__version__ == "1.0.5"
 
 
 def test_paper_doi_exposed():
