@@ -635,6 +635,12 @@ with col_card:
     if "selected_y" in st.session_state:
         y_sel = st.session_state["selected_y"]
 
+        # Diagnostic stderr line -- shows up in HF Spaces runtime logs so we
+        # can confirm the rerun reached the card-rendering branch.
+        import sys as _sys
+        print(f"[fuse] rendering card for y_sel={y_sel!r}",
+              file=_sys.stderr, flush=True)
+
         st.subheader(f"Stability Card: {y_sel}")
 
         current_x = st.number_input(
@@ -645,8 +651,16 @@ with col_card:
                  "FUSE will show how far you are from the tipping point."
         )
 
-        with st.spinner("Running full analysis..."):
-            result = _full_analysis(df_csv, x_col, y_sel, current_x)
+        try:
+            with st.spinner("Running full analysis..."):
+                result = _full_analysis(df_csv, x_col, y_sel, current_x)
+        except Exception as _exc:
+            import traceback as _tb
+            tb_str = _tb.format_exc()
+            print(f"[fuse] analyze() failed for {y_sel!r}:\n{tb_str}",
+                  file=_sys.stderr, flush=True)
+            st.error(f"Analysis failed for column **{y_sel}**:\n\n```\n{tb_str[-1500:]}\n```")
+            st.stop()
 
         # Score + diagnosis
         sc_col, diag_col = st.columns([1, 2.5])
@@ -659,8 +673,16 @@ with col_card:
         from fusepoint.card import render_card
         import matplotlib.pyplot as plt
 
-        fig = render_card(result)
-        st.pyplot(fig, use_container_width=True)
+        try:
+            fig = render_card(result)
+            st.pyplot(fig, use_container_width=True)
+        except Exception as _exc:
+            import traceback as _tb
+            tb_str = _tb.format_exc()
+            print(f"[fuse] render_card/pyplot failed for {y_sel!r}:\n{tb_str}",
+                  file=_sys.stderr, flush=True)
+            st.error(f"Card rendering failed:\n\n```\n{tb_str[-1500:]}\n```")
+            st.stop()
 
         # Download buttons
         dl_single, dl_all = st.columns(2)
