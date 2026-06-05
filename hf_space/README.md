@@ -4,7 +4,7 @@ emoji: 🧨
 colorFrom: gray
 colorTo: blue
 sdk: streamlit
-sdk_version: 1.30.0
+sdk_version: 1.46.0
 app_file: app.py
 pinned: false
 license: agpl-3.0
