@@ -12,16 +12,9 @@ import io
 import os
 import time
 import base64
-import sys as _sys
 import streamlit as st
 import pandas as pd
 import numpy as np
-
-# Every script rerun emits this -- if it shows up in HF Spaces container
-# logs, stderr capture is working; if not, the silent-on-HF symptom is
-# a logging issue, not a script-execution issue.
-print(f"[fuse] === script run @ {time.time():.1f} ===",
-      file=_sys.stderr, flush=True)
 
 _ASSETS = os.path.join(os.path.dirname(__file__), "assets")
 
@@ -195,16 +188,11 @@ if not _has_data:
 from fusepoint.parsers import parse_json as _parse_json, detect_x_column as _detect_x_column
 
 
-def _analyze_single(df, x_col, y_col):
-    """Analyze a single column pair.
-
-    Previously @st.cache_data with a CSV string key. That keyed cache by a
-    large arg (the whole df_csv) which on Streamlit 1.46 inside HF Spaces
-    caused the WebSocket to drop on subsequent reruns -- silent blank-page
-    bug. The redo cost is small (N is typically tens to hundreds of rows),
-    so we just compute fresh.
-    """
+@st.cache_data(show_spinner=False)
+def _analyze_single(df_csv, x_col, y_col):
+    """Analyze a single column pair. Cached per column."""
     from fusepoint import analyze
+    df = pd.read_csv(io.StringIO(df_csv))
     try:
         r = analyze(df, x=x_col, y=y_col,
                     n_boot=1000, n_perm=2000)
@@ -230,14 +218,14 @@ def _analyze_single(df, x_col, y_col):
         }
 
 
-def _scan_all_columns_with_progress(df, x_col, y_cols):
+def _scan_all_columns_with_progress(df_csv, x_col, y_cols):
     """Scan all columns with a visible progress bar."""
     results = []
     bar = st.progress(0, text="Starting analysis...")
     for i, y_col in enumerate(y_cols):
         bar.progress((i + 1) / len(y_cols),
                      text=f"Analyzing {y_col}  ({i+1}/{len(y_cols)})")
-        results.append(_analyze_single(df, x_col, y_col))
+        results.append(_analyze_single(df_csv, x_col, y_col))
     bar.empty()
     # Sort: significant first, then by score descending
     results.sort(key=lambda r: (
@@ -247,15 +235,12 @@ def _scan_all_columns_with_progress(df, x_col, y_cols):
     return results
 
 
-def _full_analysis(df, x_col, y_col, current_x):
-    """Full analysis with high-quality bootstrap + permutation.
-
-    Previously @st.cache_data with a CSV string key. Same reason as above:
-    on Streamlit 1.46 on HF Spaces, hashing a large string cache key
-    caused the WS to drop and the page to blank out.
-    """
+@st.cache_data(show_spinner=False)
+def _full_analysis(df_csv, x_col, y_col, current_x):
+    """Full analysis with high-quality bootstrap + permutation."""
     from fusepoint import analyze
 
+    df = pd.read_csv(io.StringIO(df_csv))
     return analyze(df, x=x_col, y=y_col,
                    current_x=current_x,
                    n_boot=1000, n_perm=2000)
@@ -274,35 +259,7 @@ if not _has_data:
 uploaded = st.file_uploader("Upload CSV, TSV, JSON", type=["csv", "tsv", "txt", "json"],
                             key="_uploader", label_visibility="collapsed")
 
-# Persist the parsed upload across reruns. On Streamlit Cloud / HF Spaces the
-# file_uploader widget can transiently report None after st.rerun() following a
-# button click. Caching the parsed DataFrame in session_state shields the rest
-# of the flow from that race.
-if uploaded is not None:
-    _stash = st.session_state.get("_uploaded_df_stash") or {}
-    if _stash.get("name") != uploaded.name or _stash.get("size") != uploaded.size:
-        try:
-            if uploaded.name.endswith(".json"):
-                import json as _json
-                _df_up = _parse_json(_json.load(uploaded))
-            else:
-                _sep = "\t" if uploaded.name.endswith(".tsv") else ","
-                _df_up = pd.read_csv(uploaded, sep=_sep)
-            st.session_state["_uploaded_df_stash"] = {
-                "name": uploaded.name,
-                "size": uploaded.size,
-                "df": _df_up,
-            }
-        except Exception as _exc:
-            st.error(f"Could not parse file: {_exc}")
-            st.stop()
-
-# Effective "do we have an uploaded dataset" — survives transient widget None.
-_has_uploaded_data = (
-    "_uploaded_df_stash" in st.session_state and "demo_df" not in st.session_state
-)
-
-if uploaded is None and not _has_uploaded_data:
+if uploaded is None:
     # Demo selector — in a blue-bordered box
     if "demo_df" not in st.session_state:
         st.markdown(
@@ -384,9 +341,7 @@ if uploaded is None and not _has_uploaded_data:
                 "biomarker_level": 1.0 + 8.0 / (1 + np.exp(-0.15 * (dose - 45))) + rng.normal(0, 0.2, 80),
                 "inflammation_index": 0.5 + 4.0 / (1 + np.exp(-0.2 * (dose - 35))) + rng.normal(0, 0.15, 80),
             })
-        # No explicit st.rerun(): clicking "Load demo" already triggered a
-        # rerun. demo_df is now in session_state and the script falls through
-        # to the analysis section below.
+        st.rerun()
 
     if "demo_df" in st.session_state:
         df = st.session_state["demo_df"]
@@ -530,10 +485,17 @@ if uploaded is None and not _has_uploaded_data:
         )
         st.stop()
 else:
-    # Read the parsed DataFrame from the stash filled when the upload arrived.
-    # This keeps the rest of the script untouched whether the widget currently
-    # returns a file object or has transiently dropped it across a rerun.
-    df = st.session_state["_uploaded_df_stash"]["df"]
+    try:
+        if uploaded.name.endswith(".json"):
+            import json
+            raw = json.load(uploaded)
+            df = _parse_json(raw)
+        else:
+            sep = "\t" if uploaded.name.endswith(".tsv") else ","
+            df = pd.read_csv(uploaded, sep=sep)
+    except Exception as e:
+        st.error(f"Could not parse file: {e}")
+        st.stop()
 
 # ---------------------------------------------------------------------------
 # Data overview
@@ -574,8 +536,9 @@ if not y_cols:
 
 st.divider()
 
+df_csv = df.to_csv(index=False)
 t0 = time.time()
-scan_results = _scan_all_columns_with_progress(df, x_col, y_cols)
+scan_results = _scan_all_columns_with_progress(df_csv, x_col, y_cols)
 scan_time = time.time() - t0
 
 # Separate OK vs error results
@@ -625,10 +588,7 @@ with col_list:
                 if st.button("View", key=f"view_{i}", use_container_width=True,
                              type="primary" if is_selected else "secondary"):
                     st.session_state["selected_y"] = res["y_column"]
-                    # No explicit st.rerun(): clicking a Streamlit button
-                    # already triggers a rerun. The explicit call caused a
-                    # double-rerun on Streamlit 1.46 that wiped session_state
-                    # on HF Spaces (page went blank after View click).
+                    st.rerun()
             st.divider()
         shown += 1
 
@@ -642,30 +602,32 @@ with col_list:
                 st.caption(f"**{er['y_column']}** — {er.get('error', 'Unknown error')}")
 
 with col_card:
-    print(f"[fuse] col_card entered, selected_y in state: "
-          f"{'selected_y' in st.session_state}",
-          file=_sys.stderr, flush=True)
     # Clear stale selection if column doesn't exist in current data
     if "selected_y" in st.session_state and st.session_state["selected_y"] not in y_cols:
         del st.session_state["selected_y"]
 
     if "selected_y" in st.session_state:
         y_sel = st.session_state["selected_y"]
-        print(f"[fuse] col_card rendering for {y_sel!r}",
-              file=_sys.stderr, flush=True)
 
-        # Render the card area in the same flat shape as the proven-on-HF
-        # minimal harness: no nested st.columns, no st.spinner, no
-        # st.number_input with value=None. Each of those was a candidate for
-        # the Streamlit-1.46-on-HF WebSocket-drop bug; the minimal version
-        # lacked them and worked. Safety-margin input moves above the card
-        # at a future point if we re-introduce it.
         st.subheader(f"Stability Card: {y_sel}")
 
-        result = _full_analysis(df, x_col, y_sel, None)
+        current_x = st.number_input(
+            "Current operating point (optional)", value=None, format="%g",
+            key="current_x_full",
+            help="Enter your current x-value to calculate safety margin. "
+                 "Example: if x is 'concurrent_requests' and you're running at 5000, enter 5000. "
+                 "FUSE will show how far you are from the tipping point."
+        )
 
-        st.metric("Score", f"{result.score} / 100", delta=result.grade)
-        st.markdown(f"**{result.diagnosis}**")
+        with st.spinner("Running full analysis..."):
+            result = _full_analysis(df_csv, x_col, y_sel, current_x)
+
+        # Score + diagnosis
+        sc_col, diag_col = st.columns([1, 2.5])
+        with sc_col:
+            st.metric("Score", f"{result.score} / 100", delta=result.grade)
+        with diag_col:
+            st.markdown(f"**{result.diagnosis}**")
 
         # Card
         from fusepoint.card import render_card
@@ -699,7 +661,7 @@ with col_card:
                         prog.progress((idx + 1) / len(ok_results),
                                       text=f"Rendering {res['y_column']}...")
                         try:
-                            r = _full_analysis(df, x_col, res["y_column"], None)
+                            r = _full_analysis(df_csv, x_col, res["y_column"], None)
                             f = render_card(r)
                             card_buf = io.BytesIO()
                             f.savefig(card_buf, format="png", dpi=200,

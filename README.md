@@ -5,6 +5,9 @@
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Commercial License](https://img.shields.io/badge/License-Commercial-orange.svg)](mailto:nfo@forgottenforge.xyz)
 [![Paper DOI](https://img.shields.io/badge/paper-10.5281%2Fzenodo.20548818-blue)](https://doi.org/10.5281/zenodo.20548818)
+[![Live demo](https://img.shields.io/badge/demo-huggingface-yellow)](https://huggingface.co/spaces/ForgottenForge/fuse)
+
+**Try it without installing:** [huggingface.co/spaces/ForgottenForge/fuse](https://huggingface.co/spaces/ForgottenForge/fuse)
 
 **Know your breaking point.**
 
