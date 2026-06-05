@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fusepoint"
-version = "1.0.1"
+version = "1.0.2"
 description = "Fuse - find where your system breaks, before it does. Statistically rigorous tipping-point detection, theorem-anchored via the sigma_c foundation paper."
 readme = "README.md"
 license = {text = "AGPL-3.0-or-later OR Commercial"}

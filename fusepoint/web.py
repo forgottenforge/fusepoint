@@ -369,7 +369,9 @@ if uploaded is None and not _has_uploaded_data:
                 "biomarker_level": 1.0 + 8.0 / (1 + np.exp(-0.15 * (dose - 45))) + rng.normal(0, 0.2, 80),
                 "inflammation_index": 0.5 + 4.0 / (1 + np.exp(-0.2 * (dose - 35))) + rng.normal(0, 0.15, 80),
             })
-        st.rerun()
+        # No explicit st.rerun(): clicking "Load demo" already triggered a
+        # rerun. demo_df is now in session_state and the script falls through
+        # to the analysis section below.
 
     if "demo_df" in st.session_state:
         df = st.session_state["demo_df"]
@@ -609,7 +611,10 @@ with col_list:
                 if st.button("View", key=f"view_{i}", use_container_width=True,
                              type="primary" if is_selected else "secondary"):
                     st.session_state["selected_y"] = res["y_column"]
-                    st.rerun()
+                    # No explicit st.rerun(): clicking a Streamlit button
+                    # already triggers a rerun. The explicit call caused a
+                    # double-rerun on Streamlit 1.46 that wiped session_state
+                    # on HF Spaces (page went blank after View click).
             st.divider()
         shown += 1
 
