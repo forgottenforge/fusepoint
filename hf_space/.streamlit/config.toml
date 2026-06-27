@@ -1,0 +1,18 @@
+[theme]
+# Force dark theme regardless of the visitor's OS/browser preference.
+# The site uses inline colours #e0e0e0/#9ca3af on muted-blue/gray boxes
+# that read as "light text on dark background" — on a light theme those
+# colours collapse onto white and become unreadable. Pinning dark here
+# means the demo looks the same everywhere.
+base = "dark"
+backgroundColor = "#0e1117"
+secondaryBackgroundColor = "#1a1f2c"
+textColor = "#e5e7eb"
+primaryColor = "#3b82f6"
+font = "sans serif"
+
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"

@@ -230,8 +230,19 @@ def analyze(data, y=None, *, x=None, current_x=None, label=None,
     if deep:
         import sigma_c_v4 as _sv4
         # Share FUSE's chi as the single source of truth so v4 classifies
-        # the same curve FUSE scored.
-        v4_result = _sv4.analyze(x_arr, y_arr, chi=chi)
+        # the same curve FUSE scored. Declare A1 explicitly: FUSE's
+        # parameter-sweep preprocessing (dedup + smoothing) is scale-
+        # equivariant, so A1 holds at the observable layer.
+        _v4_kwargs = {"chi": chi}
+        try:
+            v4_result = _sv4.analyze(
+                x_arr, y_arr,
+                preprocessing_scale_equivariant=True,
+                **_v4_kwargs,
+            )
+        except TypeError:
+            # Older sigma_c_v4 (<4.1) without the A1 kwarg.
+            v4_result = _sv4.analyze(x_arr, y_arr, **_v4_kwargs)
         v4_regime = v4_result.regime.geometric
         v4_regime_detail = v4_result.regime.as_dict()
         v4_citations = list(v4_result.citations)
@@ -239,13 +250,40 @@ def analyze(data, y=None, *, x=None, current_x=None, label=None,
         v4_framework = (v4_result.framework.value
                         if v4_result.framework is not None else None)
         v4_paper_doi = _sv4.__paper_doi__
-        # Augment FUSE's diagnosis with the regime verdict
+
+        # Augment FUSE's diagnosis with the regime verdict.
         regime_label = {
             "I_geom": "single mode (regime I, paper Thm 8.5)",
             "II_geom": "multi-mode (regime II, paper Thm 8.5)",
             "III_geom": "no characteristic scale (regime III, paper Thm 8.5)",
         }.get(v4_regime, v4_regime)
         diag["detail"] = f"{diag['detail']} Regime: {regime_label}."
+
+        # v4 >= 5.0 surfaces an explicit operational-floor flag when the
+        # spectral discriminator hits the eta_O threshold. Pass it through
+        # as a visible caveat rather than burying it in regime_detail.
+        if v4_regime_detail.get("operational_floor_triggered"):
+            diag["detail"] += (
+                " Operational-floor triggered: peak height is at the"
+                " threshold; treat sigma_c as a soft reading.")
+
+        # v4 >= 5.0 reports an orthogonal spectral-type axis when the
+        # input is an autocorrelation; parameter-sweep inputs leave it
+        # None, so this only fires on time-series-style data passed via
+        # the same API.
+        spec = v4_regime_detail.get("spectral")
+        if spec:
+            diag["detail"] += f" Spectral type: {spec}."
+
+        # Branch-(ii) standing caveat: a single visible mode in the
+        # chi-profile of a single probe does NOT exclude a slower mode
+        # that this probe suppressed below the visibility threshold.
+        # See addendum Remark on Branch-(ii) (regime I with one mode).
+        if v4_regime == "I_geom":
+            diag["detail"] += (
+                " Note: single-probe regime I — a second probe with"
+                " different modal coupling could surface a suppressed"
+                " slower mode (two-probe verification recommended).")
 
     return StabilityResult(
         score=score_info["score"],

@@ -432,7 +432,8 @@ if uploaded is None:
             st.caption("Fusion \u2014 erosion spike at 1176\u00b0C")
 
         # --- How it works — single expander with grades + domains ---
-        with st.expander("What the results mean \u2014 grades, tested domains & recommendations"):
+        with st.expander("What the results mean \u2014 grades, tested domains & recommendations",
+                         expanded=True):
             st.markdown("""
 #### Grades & what to do
 
@@ -695,7 +696,8 @@ with col_card:
 
 # --- Reference block (always available, also on results pages) ---
 st.divider()
-with st.expander("What the results mean \u2014 grades, tested domains & recommendations"):
+with st.expander("What the results mean \u2014 grades, tested domains & recommendations",
+                 expanded=True):
     st.markdown("""
 #### Grades & what to do
 

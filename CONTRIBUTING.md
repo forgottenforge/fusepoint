@@ -60,9 +60,7 @@ would cite.
   `engine: tighten bootstrap CI for low-N inputs`.
 - Body (optional): why, not what.
 - Sign-off if you can: `git commit -s` adds `Signed-off-by:`.
-- **Do not add `Co-Authored-By:` trailers for AI assistants.** AI
-  assistance is declared once in the README acknowledgements, not as a
-  per-commit attribution.
+- **Do not add `Co-Authored-By:` trailers for AI assistants.**
 
 ### Tests
 

@@ -56,9 +56,56 @@ st.set_page_config(
 st.markdown(
     """
     <style>
+    /* Always show the page scrollbar so its appear/disappear cannot
+       reshuffle viewport width and pull right-aligned content sideways.
+       This is the single biggest source of right-side wobble in Chrome
+       inside the HF Spaces iframe. */
+    html {
+        overflow-y: scroll !important;
+        scrollbar-gutter: stable;
+    }
+    .stApp {
+        min-height: 100vh;
+    }
     /* Push first content below the HF Spaces iframe top bar so the
        FUSE logo crown is not clipped. */
     .block-container {padding-top: 2.6rem; padding-bottom: 1.5rem;}
+    /* Chrome inside the HF iframe reflows aggressively when matplotlib
+       images load; pinning images to their natural aspect ratio and
+       containing their layout stops the cascade-wobble. Every FUSE card
+       PNG is rendered from figsize=(14, 8), so 14/8 is the universal
+       aspect ratio for st.image content. */
+    [data-testid="stImage"] {
+        contain: layout style paint;
+        aspect-ratio: 14 / 8;
+        overflow: hidden;
+        /* Force GPU layer so Chrome does not invalidate the composited
+           pixels on every neighbouring layout change. */
+        transform: translateZ(0);
+        backface-visibility: hidden;
+        will-change: transform;
+    }
+    [data-testid="stImage"] img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+    /* Same GPU-layer trick for the header logos, which also wobble in
+       Chrome but not Firefox. */
+    .header-logo img {
+        transform: translateZ(0);
+        backface-visibility: hidden;
+    }
+    /* Kill ALL transitions / animations globally (not just inside .stApp)
+       since Streamlit injects elements outside that scope as well. */
+    *, *::before, *::after {
+        animation-duration: 0s !important;
+        animation-delay: 0s !important;
+        transition-duration: 0s !important;
+        transition-delay: 0s !important;
+        animation-iteration-count: 1 !important;
+    }
     .vp-card {
         border-left: 4px solid var(--vp-color, #3b82f6);
         padding: 1rem 1.2rem;
@@ -97,14 +144,15 @@ st.markdown(
 # vertical baseline. No st.columns -> no float -> no offset drift.
 # ---------------------------------------------------------------------------
 st.markdown(
-    f'<div style="display:flex; align-items:center; justify-content:space-between; '
-    f'gap:1rem; padding:0.2rem 0 0.6rem;">'
-    f'<img src="data:image/png;base64,{_FUSE_LOGO}" width="180" '
-    f'style="display:block;" />'
+    f'<div class="header-logo" style="display:flex; align-items:center; '
+    f'justify-content:space-between; gap:1rem; '
+    f'padding:0.2rem 0 0.6rem; min-height:104px;">'
+    f'<img src="data:image/png;base64,{_FUSE_LOGO}" width="180" height="100" '
+    f'style="display:block; object-fit:contain;" />'
     f'<a href="https://forgottenforge.xyz" target="_blank" '
     f'style="display:flex; align-items:center;">'
-    f'<img src="data:image/png;base64,{_FF_LOGO}" width="100" '
-    f'style="display:block; border-radius:8px;" />'
+    f'<img src="data:image/png;base64,{_FF_LOGO}" width="100" height="100" '
+    f'style="display:block; border-radius:8px; object-fit:contain;" />'
     f'</a>'
     f'</div>',
     unsafe_allow_html=True,
@@ -137,17 +185,55 @@ _has_data = (
 # Hero: interactive slider against a synthetic Server Load Test dataset.
 # Only shown on landing (no data yet).
 # ---------------------------------------------------------------------------
+def _render_to_png(result):
+    """Render a result card to PNG bytes. dpi=80 keeps the file size low
+    so Chrome decodes it in a single paint frame (no progressive load /
+    no layout-shift cascade)."""
+    fig = render_card(result)
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=80,
+                facecolor=fig.get_facecolor(), edgecolor="none")
+    plt.close(fig)
+    buf.seek(0)
+    return buf.getvalue()
+
+
+def _png_to_html_img(png_bytes, max_width_px=None):
+    """Inline a PNG as an HTML <img> with EXPLICIT pixel dimensions so
+    Chrome reserves the exact final box before decoding. This bypasses
+    Streamlit's aspect-ratio container which was still leaving room for
+    a sub-pixel reflow on image decode."""
+    b64 = base64.b64encode(png_bytes).decode()
+    style = (
+        "display:block; width:100%; height:auto; "
+        "transform:translateZ(0); backface-visibility:hidden;"
+    )
+    if max_width_px is not None:
+        style += f" max-width:{max_width_px}px;"
+    # Aspect-ratio attributes are honoured by all modern browsers and let
+    # Chrome reserve the final height before the bytes arrive.
+    return (
+        f'<img src="data:image/png;base64,{b64}" '
+        f'width="1120" height="640" '
+        f'style="{style}" />'
+    )
+
+
 @st.cache_data(show_spinner=False)
-def _hero_analyze(current_x):
+def _hero_png(current_x):
+    """Cache the hero PNG by slider value. After the first visit at a given
+    slider position, subsequent renders are an instant cache hit -- no
+    matplotlib reflow, no iframe wobble."""
     rq = np.linspace(100, 10000, 100)
     lat = 10 + 50 / (1 - np.clip(rq / 7500, 0, 0.98))
     lat += np.random.default_rng(7).normal(0, 5, 100)
-    return analyze(rq, lat,
-                   current_x=current_x,
-                   x_name="Concurrent Requests",
-                   y_name="Response Time (ms)",
-                   label="Server Load Test",
-                   n_boot=200, n_perm=500)
+    r = analyze(rq, lat,
+                current_x=current_x,
+                x_name="Concurrent Requests",
+                y_name="Response Time (ms)",
+                label="Server Load Test",
+                n_boot=200, n_perm=500)
+    return _render_to_png(r)
 
 
 if not _has_data:
@@ -183,10 +269,8 @@ if not _has_data:
             unsafe_allow_html=True,
         )
     with hero_right:
-        hero_result = _hero_analyze(hero_x)
-        hero_fig = render_card(hero_result)
-        st.pyplot(hero_fig, use_container_width=True)
-        plt.close(hero_fig)
+        hero_png = _hero_png(hero_x)
+        st.markdown(_png_to_html_img(hero_png), unsafe_allow_html=True)
 
     st.divider()
 
@@ -231,7 +315,10 @@ if not _has_data:
 # does not overlap with the score on small layouts.
 # ---------------------------------------------------------------------------
 @st.cache_data(show_spinner=False)
-def _showcase():
+def _showcase_pngs():
+    """Cache the showcase mini-cards as pre-rendered PNG bytes. After the
+    first cache fill they reload instantly with no matplotlib reflow --
+    eliminates the Chrome-specific layout wobble on landing."""
     rng = np.random.default_rng(42)
 
     B = np.linspace(0.5, 4.0, 80)
@@ -258,7 +345,7 @@ def _showcase():
                  y_name="Erosion (um/pulse)",
                  label="Fusion Reactor Erosion",
                  n_boot=200, n_perm=500)
-    return r1, r2, r3
+    return _render_to_png(r1), _render_to_png(r2), _render_to_png(r3)
 
 
 if not _has_data:
@@ -270,17 +357,15 @@ if not _has_data:
         "</div>",
         unsafe_allow_html=True,
     )
-    r1, r2, r3 = _showcase()
+    p1, p2, p3 = _showcase_pngs()
     sc1, sc2, sc3 = st.columns(3)
-    for col, res, caption in (
-        (sc1, r1, "Physics - quantum phase transition at 2.27 T"),
-        (sc2, r2, "Biology - toxicity cliff at 42 mg/L"),
-        (sc3, r3, "Fusion - erosion spike at 1176 deg C"),
+    for col, png, caption in (
+        (sc1, p1, "Physics - quantum phase transition at 2.27 T"),
+        (sc2, p2, "Biology - toxicity cliff at 42 mg/L"),
+        (sc3, p3, "Fusion - erosion spike at 1176 deg C"),
     ):
         with col:
-            fig = render_card(res)
-            st.pyplot(fig, use_container_width=True)
-            plt.close(fig)
+            st.markdown(_png_to_html_img(png), unsafe_allow_html=True)
             st.caption(caption)
 
     st.divider()
@@ -616,6 +701,49 @@ with col_card:
 
         with st.expander("Full metrics"):
             st.code(result.summary())
+
+
+# ---------------------------------------------------------------------------
+# Reference block - always available, also on results pages.
+# Restored 2026-06-16 (was missing from the HF Space version compared to
+# the local fuse-ui). expanded=True so the explanations are visible
+# without a click.
+# ---------------------------------------------------------------------------
+st.divider()
+with st.expander(
+    "What the results mean — grades, tested domains & recommendations",
+    expanded=True,
+):
+    st.markdown("""
+#### Grades & what to do
+
+| Grade | Meaning | Action |
+|---|---|---|
+| **STABLE** (85+) | Far from the edge | You're fine. Set alerts at 90% of the tipping point. |
+| **MODERATE** (60-84) | Room left, but limited | **Hold where you are.** Don't push harder without a plan. |
+| **WARNING** (35-59) | Close to the edge | **Back off.** Lower temp, cut dose, add capacity. |
+| **CRITICAL** (<35) | Past the breaking point | **Act now.** Reduce immediately. |
+
+---
+
+#### All 6 tested domains
+
+| Domain | Tipping Point | Score | What to do |
+|---|---|---|---|
+| **Physics** — B-field | **2.27 T** (CI: 2.18–2.45) | 73 | Keep below 2.0 T. Hunting the transition? Sweep 2.1–2.5 T. |
+| **Fusion** — Plasma temp | **1176°C** (CI: 1152–1212) | 73 | Hard limit at 1060°C. **Increase coolant** or **cut plasma power**. |
+| **Chemistry** — Reaction temp | **151°C** (CI: 142–155) | 76 | Reactor limit at 136°C. Past it? **Shutdown**, cut the feed. |
+| **Biology** — Drug dose | **42 mg/L** (CI: 38–48) | 56 | Safe max: 38 mg/L. Need more effect? Try combination therapy. |
+| **ML** — Learning rate | **0.053** (CI: 0.048–0.056) | 73 | Set lr to 0.04. Past 0.06? **Stop**, lower to 0.03, restart. |
+| **Infra** — Requests | **7200 req/s** (CI: 7000–7300) | 85 | Autoscale at 5700. Past TP? **Shed load** — rate-limit, serve cached. |
+
+**Rule of thumb:** Keep your operating point at **80–90% of the tipping point**. That's your real limit.
+
+---
+
+**Works with** any CSV/TSV/JSON, 2+ numeric columns, 8+ rows.
+**Won't work** on pure noise, linear trends with no cliff, or fewer than 8 points.
+""")
 
 
 # ---------------------------------------------------------------------------

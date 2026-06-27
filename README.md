@@ -80,6 +80,27 @@ The statistical layer scores **how stable** the system is. The
 theorem-anchored layer says **which regime** the system is in and which
 paper theorem licenses that reading.
 
+#### What `deep=True` surfaces on top of regime + gamma_O
+
+With `sigma-c-framework >= 5.0`, the theorem-anchored layer reports
+three additional pieces of provenance on the diagnosis string:
+
+- **Branch-(ii) standing caveat for regime I.** A single visible mode
+  in the chi-profile of a single probe does *not* exclude a slower
+  mode that this probe suppressed below the visibility threshold.
+  The framework's published two-probe verification protocol is the
+  standard cross-check; FUSE surfaces this caveat by default whenever
+  a regime-I reading is returned from a single probe.
+- **Operational-floor flag.** When the spectral-attribution gate sits
+  at the threshold, the regime call is reported as a soft reading
+  rather than an asymptotic one.
+- **Spectral type (gapped / III-pp / III-anom)** when the input is an
+  autocorrelation profile rather than a parameter sweep. Parameter
+  sweeps (FUSE's default mode) leave this field empty.
+
+These appear in `result.diagnosis` and `result.regime_detail` only
+when `deep=True`; the default statistical layer is unchanged.
+
 ## Quick start
 
 ### Array mode
@@ -180,7 +201,8 @@ how confident it is.
 
 | Version | What changed |
 |---------|--------------|
-| **1.0.0** (current) | Production release. Streamlit UI bundled (`fuse-ui`). Theorem-anchored `deep=True` layer powered by `sigma-c-framework` v4. Dual licensure (AGPL + Commercial). |
+| **1.1.0** (current) | `deep=True` layer aligned to `sigma-c-framework` v5: surfaces the Branch-(ii) standing caveat on regime I, operational-floor flag, and spectral-type axis. Streamlit web UI forces dark theme. Explanation block visible on landing. |
+| 1.0.x | Production release line. Streamlit UI bundled (`fuse-ui`). Theorem-anchored `deep=True` layer powered by `sigma-c-framework` v4. Dual licensure (AGPL + Commercial). |
 | 0.1.0 | Initial PyPI release (renamed from `fusekit`). CLI / library only. |
 
 ## Citation
@@ -204,8 +226,3 @@ FUSE is **dual-licensed**: see [`LICENSE`](LICENSE).
   are inappropriate ([`license_COMMERCIAL.txt`](license_COMMERCIAL.txt)).
   Contact `nfo@forgottenforge.xyz`.
 
-## Acknowledgements
-
-FUSE is developed at [ForgottenForge](https://forgottenforge.xyz) with
-ongoing AI-assisted research and engineering by **Arti Cyan** — primarily
-Anthropic Claude.

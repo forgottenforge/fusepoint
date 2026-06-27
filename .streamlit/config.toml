@@ -1,0 +1,15 @@
+[theme]
+# Same forced-dark theme for local `fuse-ui` runs from this directory.
+# Streamlit picks up .streamlit/config.toml from the cwd at startup.
+base = "dark"
+backgroundColor = "#0e1117"
+secondaryBackgroundColor = "#1a1f2c"
+textColor = "#e5e7eb"
+primaryColor = "#3b82f6"
+font = "sans serif"
+
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"
